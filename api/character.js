@@ -1,7 +1,7 @@
-import axios from "axios";
+const axios = require("axios");
 
-export default async function handler(req, res) {
-  const { name } = req.query;
+module.exports = async (req, res) => {
+  const name = req.query.name;
 
   if (!name) {
     return res.status(400).json({ error: "Missing character name" });
@@ -9,6 +9,10 @@ export default async function handler(req, res) {
 
   const SERVICE_ID = process.env.SERVICE_ID;
   const BASE = "https://census.daybreakgames.com";
+
+  if (!SERVICE_ID) {
+    return res.status(500).json({ error: "Service ID not set" });
+  }
 
   try {
     const url = `${BASE}/${SERVICE_ID}/get/ps2:v2/character/?name.first_lower=${name.toLowerCase()}&c:resolve=stats&c:limit=1`;
@@ -27,7 +31,7 @@ export default async function handler(req, res) {
       kills: c.stats.stat.find(s => s.stat_name === "kills")?.value || 0,
       deaths: c.stats.stat.find(s => s.stat_name === "deaths")?.value || 0
     });
-  } catch {
-    res.status(500).json({ error: "API error" });
+  } catch (err) {
+    res.status(500).json({ error: "API error", details: err.message });
   }
-}
+};
