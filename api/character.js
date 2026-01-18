@@ -8,11 +8,11 @@ export default async function handler(req, res) {
     }
 
     const url =
-      "https://census.daybreakgames.com/s:Elite112608/get/ps2:v2/character/" +
+      "https://census.daybreakgames.com/s:example/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
       "&c:join=characters_online_status" +
-      "&c:resolve=stat_history(stat_name,all_time)" +
-      "&c:tree=stat_name^start:stats.stat_history";
+      "&c:resolve=stat,stat_history(stat_name,all_time)" +
+      "&c:tree=stat_name^start:stats";
 
     const response = await fetch(url);
     const data = await response.json();
@@ -23,12 +23,19 @@ export default async function handler(req, res) {
 
     const char = data.character_list[0];
 
-    // Convert stat array → map
-    const statArray = char.stats?.stat_history || [];
+    // 🔥 Merge stat + stat_history into one map
     const statMap = {};
-    for (const stat of statArray) {
-      statMap[stat.stat_name] = Number(stat.all_time || 0);
-    }
+
+    const addStats = (arr = []) => {
+      for (const s of arr) {
+        if (!statMap[s.stat_name]) {
+          statMap[s.stat_name] = Number(s.all_time || s.value || 0);
+        }
+      }
+    };
+
+    addStats(char.stats?.stat);
+    addStats(char.stats?.stat_history);
 
     const kills = statMap.kills || 0;
     const deaths = statMap.deaths || 0;
@@ -48,4 +55,12 @@ export default async function handler(req, res) {
       kills,
       deaths,
       kd,
-      head
+      headshots,
+      playtimeHours,
+      online
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
