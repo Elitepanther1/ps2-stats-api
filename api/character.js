@@ -7,12 +7,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing character name" });
     }
 
-    // ✅ JS builds the URL here
     const url =
       "https://census.daybreakgames.com/s:example/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
       "&c:join=characters_online_status" +
-      "&c:resolve=stat_history(stat_name,all_time)";
+      "&c:resolve=stat_history(stat_name,all_time)" +
+      "&c:tree=stat_name^start:stats.stat_history";
 
     const response = await fetch(url);
     const data = await response.json();
@@ -22,15 +22,18 @@ export default async function handler(req, res) {
     }
 
     const char = data.character_list[0];
-    const stats = char.stats?.stat_history || {};
 
-    const getStat = (stat) =>
-      Number(stats[stat]?.all_time || 0);
+    // Convert stat array → map
+    const statArray = char.stats?.stat_history || [];
+    const statMap = {};
+    for (const stat of statArray) {
+      statMap[stat.stat_name] = Number(stat.all_time || 0);
+    }
 
-    const kills = getStat("kills");
-    const deaths = getStat("deaths");
-    const headshots = getStat("headshots");
-    const playtimeSeconds = getStat("play_time");
+    const kills = statMap.kills || 0;
+    const deaths = statMap.deaths || 0;
+    const headshots = statMap.headshots || 0;
+    const playtimeSeconds = statMap.play_time || 0;
 
     const kd = deaths > 0 ? (kills / deaths).toFixed(2) : "0.00";
     const playtimeHours = (playtimeSeconds / 3600).toFixed(1);
@@ -45,12 +48,4 @@ export default async function handler(req, res) {
       kills,
       deaths,
       kd,
-      headshots,
-      playtimeHours,
-      online
-    });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
+      head
