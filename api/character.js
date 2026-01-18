@@ -17,7 +17,8 @@ export default async function handler(req, res) {
     const url =
       `https://census.daybreakgames.com/s:Elite112608/get/ps2:v2/character` +
       `?name.first_lower=${name.toLowerCase()}` +
-      `&c:resolve=stat,profile,online_status`;
+      `&c:resolve=online_status` +
+      `&c:join=character_stat`;
 
     const response = await fetch(url);
     const data = await response.json();
@@ -27,35 +28,33 @@ export default async function handler(req, res) {
     }
 
     const character = data.character_list[0];
-    const statsArray = character.stats?.stat || [];
+    const stats = character.character_stat || [];
 
-    const getStat = (name) => {
-      const stat = statsArray.find(s => s.stat_name === name);
+    const getStat = (statName) => {
+      const stat = stats.find(s => s.stat_name === statName);
       return stat ? Number(stat.value_forever) : 0;
     };
 
     const kills = getStat("kills");
     const deaths = getStat("deaths");
     const headshots = getStat("headshots");
-    const score = getStat("score");
     const playtimeSeconds = getStat("play_time");
 
     const kd = deaths > 0 ? (kills / deaths).toFixed(2) : kills;
     const playtimeHours = (playtimeSeconds / 3600).toFixed(1);
 
-    const onlineStatusRaw = character.online_status?.online_status ?? "0";
-    const isOnline = onlineStatusRaw === "1";
+    const onlineRaw = character.online_status?.online_status ?? "0";
+    const online = onlineRaw === "1";
 
     res.json({
       name: character.name.first,
-      battleRank: character.battle_rank?.value || "Unknown",
+      battleRank: character.battle_rank?.value ?? "Unknown",
       kills,
       deaths,
       kd,
       headshots,
-      score,
       playtimeHours,
-      online: isOnline
+      online
     });
 
   } catch (err) {
