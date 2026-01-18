@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     const url =
       `https://census.daybreakgames.com/s:example/get/ps2:v2/character` +
       `?name.first_lower=${name.toLowerCase()}` +
-      `&c:resolve=stat,profile`;
+      &c:resolve=stat,profile,online_status
 
     const response = await fetch(url);
     const data = await response.json();
@@ -27,6 +27,8 @@ export default async function handler(req, res) {
     }
 
     const character = data.character_list[0];
+    const onlineStatusRaw = character.online_status?.online_status ?? "0";
+    const isOnline = onlineStatusRaw === "1";
     const statsArray = character.stats?.stat || [];
 
     // Helper function to get stat value safely
