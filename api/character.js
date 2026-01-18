@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     }
 
     const url =
-      `https://census.daybreakgames.com/s:example/get/ps2:v2/character` +
+      `https://census.daybreakgames.com/s:Elite112608/get/ps2:v2/character` +
       `?name.first_lower=${name.toLowerCase()}` +
       `&c:resolve=stat,profile,online_status`;
 
