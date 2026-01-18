@@ -4,8 +4,8 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
-  return res.status(200).end();
-}
+    return res.status(200).end();
+  }
 
   try {
     const name = req.query.name;
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     const url =
       `https://census.daybreakgames.com/s:example/get/ps2:v2/character` +
       `?name.first_lower=${name.toLowerCase()}` +
-      &c:resolve=stat,profile,online_status
+      `&c:resolve=stat,profile,online_status`;
 
     const response = await fetch(url);
     const data = await response.json();
@@ -27,11 +27,8 @@ export default async function handler(req, res) {
     }
 
     const character = data.character_list[0];
-    const onlineStatusRaw = character.online_status?.online_status ?? "0";
-    const isOnline = onlineStatusRaw === "1";
     const statsArray = character.stats?.stat || [];
 
-    // Helper function to get stat value safely
     const getStat = (name) => {
       const stat = statsArray.find(s => s.stat_name === name);
       return stat ? Number(stat.value_forever) : 0;
@@ -46,6 +43,9 @@ export default async function handler(req, res) {
     const kd = deaths > 0 ? (kills / deaths).toFixed(2) : kills;
     const playtimeHours = (playtimeSeconds / 3600).toFixed(1);
 
+    const onlineStatusRaw = character.online_status?.online_status ?? "0";
+    const isOnline = onlineStatusRaw === "1";
+
     res.json({
       name: character.name.first,
       battleRank: character.battle_rank?.value || "Unknown",
@@ -54,7 +54,8 @@ export default async function handler(req, res) {
       kd,
       headshots,
       score,
-      playtimeHours
+      playtimeHours,
+      online: isOnline
     });
 
   } catch (err) {
