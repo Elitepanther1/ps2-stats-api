@@ -4,14 +4,15 @@ export default async function handler(req, res) {
   try {
     const name = req.query.name;
     if (!name) {
-      return res.status(400).json({ error: "Missing name" });
+      return res.status(400).json({ error: "Missing character name" });
     }
 
+    // ✅ JS builds the URL here
     const url =
-      `https://census.daybreakgames.com/s:Elite112608/get/ps2:v2/character/` +
-      `?name.first_lower=${name.toLowerCase()}` +
-      `&c:join=characters_online_status` +
-      `&c:resolve=stat_history(stat_name,all_time)`;
+      "https://census.daybreakgames.com/s:example/get/ps2:v2/character/" +
+      "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
+      "&c:join=characters_online_status" +
+      "&c:resolve=stat_history(stat_name,all_time)";
 
     const response = await fetch(url);
     const data = await response.json();
@@ -23,8 +24,8 @@ export default async function handler(req, res) {
     const char = data.character_list[0];
     const stats = char.stats?.stat_history || {};
 
-    const getStat = (name) =>
-      Number(stats[name]?.all_time || 0);
+    const getStat = (stat) =>
+      Number(stats[stat]?.all_time || 0);
 
     const kills = getStat("kills");
     const deaths = getStat("deaths");
