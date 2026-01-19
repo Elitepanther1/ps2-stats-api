@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
   try {
     const url =
-      "https://census.daybreakgames.com/s:example/get/ps2:v2/character/" +
+      "https://census.daybreakgames.com/s:Elite112608/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
       "&c:join=title,characters_online_status,outfit_member_extended" +
       "&c:resolve=stat,stat_history(stat_name,all_time),weapon_stat_by_faction" +
