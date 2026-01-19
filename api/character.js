@@ -14,7 +14,8 @@ export default async function handler(req, res) {
     const url =
       "https://census.daybreakgames.com/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
-      "&c:resolve=stat_history(stat_name,all_time),weapon_stat_by_faction" +
+      "&c:resolve=stat_history(stat_name,all_time)" +
+      "&c:join=weapon_stat^on:character_id^list:1^terms:stat_name=headshots" +
       "&c:limit=1";
 
     const response = await fetch(url);
@@ -22,13 +23,9 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     const char = data.character_list?.[0];
-    if (!char) {
-      return res.status(404).json({ error: "Character not found" });
-    }
+    if (!char) return res.status(404).json({ error: "Character not found" });
 
-    /* =======================
-       WORKING STATS (UNCHANGED)
-       ======================= */
+    /* ===== WORKING STATS (UNCHANGED) ===== */
     const statHistory = char.stats?.stat_history || [];
 
     const getHistory = (n) =>
@@ -36,18 +33,14 @@ export default async function handler(req, res) {
 
     const kills = getHistory("kills");
     const deaths = getHistory("deaths");
-    const playtimeSeconds = getHistory("play_time");
+    const playtimeSeconds = getHistory("play_time_seconds");
 
-    /* =======================
-       FIXED HEADSHOTS (REAL)
-       ======================= */
-    const weaponStats = char.weapon_stat_by_faction || [];
+    /* ===== REAL HEADSHOTS ===== */
     let headshots = 0;
+    const weaponStats = char.weapon_stat || [];
 
-    for (const entry of weaponStats) {
-      if (entry.stat_name === "headshots") {
-        headshots += Number(entry.value || 0);
-      }
+    for (const stat of weaponStats) {
+      headshots += Number(stat.value || 0);
     }
 
     res.json({
