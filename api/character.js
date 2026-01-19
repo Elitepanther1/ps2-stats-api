@@ -17,8 +17,6 @@ export default async function handler(req, res) {
       "&c:resolve=stat_history(stat_name,all_time)" +
       "&c:tree=stat_name^start:stats.stat_history" +
       "&c:resolve=times(minutes_played)" +
-      "&c:resolve=weapon_stat_by_faction" +
-      "&c:tree=stat_name^start:stats.stat_history^field:faction_id^list:1" +
       "&c:limit=1";
 
     const response = await fetch(url);
@@ -41,14 +39,6 @@ export default async function handler(req, res) {
     const days = Math.floor(totalHours / 24);
     const hours = totalHours % 24;
 
-    // Headshots per faction
-    const factionValues = { 1: "value_vs", 2: "value_nc", 3: "value_tr" };
-    const factionField = factionValues[char.faction_id] || "value_vs";
-
-    const headshots = char.weapon_stat_by_faction
-      ?.filter(w => w.stat_name === "weapon_headshots")
-      .reduce((sum, w) => sum + Number(w[factionField] || 0), 0) || 0;
-
     res.json({
       name: char.name.first,
       battleRank: Number(char.battle_rank.value),
@@ -56,7 +46,6 @@ export default async function handler(req, res) {
       kills,
       deaths,
       kd: deaths === 0 ? "∞" : (kills / deaths).toFixed(2),
-      headshots,
       playtime: `${days}d ${hours}h`
     });
 
