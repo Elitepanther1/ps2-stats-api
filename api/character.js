@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     const url =
       "https://census.daybreakgames.com/s:example/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
-      "&c:resolve=stat_history(stat_name,all_time)" +
+      "&c:resolve=stat,stat_history(stat_name,all_time)" +
       "&c:limit=1";
 
     const response = await fetch(url);
@@ -21,18 +21,19 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Character not found" });
     }
 
-    // ✅ stat_history is an ARRAY
-    const stats = char.stats?.stat_history || [];
+    const history = char.stats?.stat_history || [];
+    const stats = char.stats?.stat || [];
 
-    const getStat = (name) => {
-      const s = stats.find(x => x.stat_name === name);
-      return Number(s?.all_time || 0);
-    };
+    const getHistory = (name) =>
+      Number(history.find(s => s.stat_name === name)?.all_time || 0);
 
-    const kills = getStat("kills");
-    const deaths = getStat("deaths");
+    const getStat = (name) =>
+      Number(stats.find(s => s.stat_name === name)?.value || 0);
+
+    const kills = getHistory("kills");
+    const deaths = getHistory("deaths");
+    const playtimeSeconds = getHistory("play_time_seconds");
     const headshots = getStat("headshots");
-    const playtimeSeconds = getStat("play_time");
 
     res.json({
       name: char.name.first,
