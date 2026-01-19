@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const url =
       "https://census.daybreakgames.com/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
-      "&c:resolve=stat,stat_history(stat_name,all_time),weapon_stat_by_faction" +
+      "&c:resolve=stat_history(stat_name,all_time),weapon_stat_by_faction" +
       "&c:limit=1";
 
     const response = await fetch(url);
@@ -26,7 +26,9 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Character not found" });
     }
 
-    // ===== EXISTING WORKING STATS =====
+    /* =======================
+       WORKING STATS (UNCHANGED)
+       ======================= */
     const statHistory = char.stats?.stat_history || [];
 
     const getHistory = (n) =>
@@ -36,19 +38,18 @@ export default async function handler(req, res) {
     const deaths = getHistory("deaths");
     const playtimeSeconds = getHistory("play_time");
 
-    // ===== FIXED HEADSHOTS =====
+    /* =======================
+       FIXED HEADSHOTS (REAL)
+       ======================= */
     const weaponStats = char.weapon_stat_by_faction || [];
     let headshots = 0;
 
-    for (const weapon of weaponStats) {
-      for (const stat of weapon.stats || []) {
-        if (stat.stat_name === "headshots") {
-          headshots += Number(stat.value || 0);
-        }
+    for (const entry of weaponStats) {
+      if (entry.stat_name === "headshots") {
+        headshots += Number(entry.value || 0);
       }
     }
 
-    // ===== RESPONSE =====
     res.json({
       name: char.name.first,
       battleRank: Number(char.battle_rank.value),
