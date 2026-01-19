@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   // 🔥 HARDCODED ON PURPOSE (TEST)
-  const SERVICE_ID = "s:example";
+  const SERVICE_ID = "s:Elite112608";
 
   try {
     const url =
