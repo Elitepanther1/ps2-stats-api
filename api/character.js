@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
@@ -8,31 +10,31 @@ export default async function handler(req, res) {
 
   try {
     const url =
-      "https://census.daybreakgames.com/s:example/get/ps2:v2/character/" +
+      "https://census.daybreakgames.com/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
-      "&c:resolve=stat_history(stat_name,all_time)" +
+      "&c:resolve=stat,stat_history(stat_name,all_time)" +
       "&c:limit=1";
 
-    const response = await fetch(url);
-    const data = await response.json();
+    const r = await axios.get(url);
+    const char = r.data.character_list?.[0];
 
-    const char = data.character_list?.[0];
     if (!char) {
       return res.status(404).json({ error: "Character not found" });
     }
 
-    // ✅ stat_history is an ARRAY
-    const stats = char.stats?.stat_history || [];
+    const history = char.stats?.stat_history || [];
+    const stats = char.stats?.stat || [];
 
-    const getStat = (name) => {
-      const s = stats.find(x => x.stat_name === name);
-      return Number(s?.all_time || 0);
-    };
+    const getHistory = (n) =>
+      Number(history.find(s => s.stat_name === n)?.all_time || 0);
 
-    const kills = getStat("kills");
-    const deaths = getStat("deaths");
+    const getStat = (n) =>
+      Number(stats.find(s => s.stat_name === n)?.value_forever || 0);
+
+    const kills = getHistory("kills");
+    const deaths = getHistory("deaths");
+    const playtimeSeconds = getHistory("play_time");
     const headshots = getStat("headshots");
-    const playtimeSeconds = getStat("play_time");
 
     res.json({
       name: char.name.first,
@@ -46,7 +48,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("API ERROR:", err?.response?.data || err);
     res.status(500).json({ error: "Server error" });
   }
 }
