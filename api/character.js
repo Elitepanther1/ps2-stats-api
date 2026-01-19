@@ -32,7 +32,8 @@ export default async function handler(req, res) {
     const kills = Number(history.kills?.all_time || 0);
     const deaths = Number(history.deaths?.all_time || 0);
 
-    const minutesPlayed = Number(char.times?.minutes_played?.all_time || 0);
+    // ✅ Fix: directly use char.times.minutes_played
+    const minutesPlayed = Number(char.times?.minutes_played || 0);
     const totalHours = Math.floor(minutesPlayed / 60);
     const days = Math.floor(totalHours / 24);
     const hours = totalHours % 24;
