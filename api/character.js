@@ -41,12 +41,10 @@ export default async function handler(req, res) {
     const days = Math.floor(totalHours / 24);
     const hours = totalHours % 24;
 
-    // Headshots
-    const factionId = char.faction_id;
-    const headshotsEntry = char.weapon_stat_by_faction?.find(
-      (w) => w.stat_name === "headshots" && w.faction_id === factionId
-    );
-    const headshots = Number(headshotsEntry?.stat_history?.all_time || 0);
+    // Headshots: sum all "weapon_headshots"
+    const headshots = char.weapon_stat_by_faction
+      ?.filter(w => w.stat_name === "weapon_headshots")
+      .reduce((sum, w) => sum + Number(w.stat_history?.all_time || 0), 0) || 0;
 
     res.json({
       name: char.name.first,
