@@ -25,18 +25,26 @@ export default async function handler(req, res) {
 
     // 🔥 Merge stat + stat_history into one map
     const statMap = {};
-
+    
     const addStats = (arr = []) => {
       for (const s of arr) {
-        const key = s.stat_name || s.name;
-        if (!statMap[key]) {
-          statMap[key] = Number(s.all_time || s.value || 0);
+        const key = s.stat_name;
+        if (!key) continue;
+    
+        const value =
+          s.value !== undefined
+            ? Number(s.value)
+            : Number(s.all_time?.value ?? 0);
+    
+        if (!Number.isNaN(value) && statMap[key] === undefined) {
+          statMap[key] = value;
         }
       }
     };
-
+    
     addStats(char.stats?.stat);
     addStats(char.stats?.stat_history);
+
 
     const kills = statMap.kills || 0;
     const deaths = statMap.deaths || 0;
