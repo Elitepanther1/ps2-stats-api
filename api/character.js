@@ -1,18 +1,19 @@
 import axios from "axios";
 
 export default async function handler(req, res) {
-  const { name } = req.query;
+  res.setHeader("Access-Control-Allow-Origin", "*");
 
+  const { name } = req.query;
   if (!name) {
     return res.status(400).json({ error: "Missing character name" });
   }
 
-  const SERVICE_ID = process.env.SERVICE_ID; // ex: s:Elite112608
-  const BASE = "https://census.daybreakgames.com";
+  // 🔥 HARDCODED ON PURPOSE (TEST)
+  const SERVICE_ID = "s:example";
 
   try {
     const url =
-      `${BASE}/${SERVICE_ID}/get/ps2:v2/character/` +
+      `https://census.daybreakgames.com/${SERVICE_ID}/get/ps2:v2/character/` +
       `?name.first_lower=${encodeURIComponent(name.toLowerCase())}` +
       `&c:resolve=stat` +
       `&c:limit=1`;
@@ -26,8 +27,8 @@ export default async function handler(req, res) {
 
     const stats = c.stats?.stat ?? [];
 
-    const getStat = (name) =>
-      Number(stats.find(s => s.stat_name === name)?.value ?? 0);
+    const getStat = (stat) =>
+      Number(stats.find(s => s.stat_name === stat)?.value || 0);
 
     res.json({
       name: c.name.first,
@@ -38,7 +39,10 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "API error" });
+    console.error("API ERROR:", err.message);
+    res.status(500).json({
+      error: "Census API error",
+      details: err.message
+    });
   }
 }
