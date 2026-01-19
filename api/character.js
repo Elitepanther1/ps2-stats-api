@@ -1,4 +1,6 @@
-import axios from "axios";
+export const config = {
+  runtime: "nodejs"
+};
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -15,8 +17,14 @@ export default async function handler(req, res) {
       "&c:resolve=stat,stat_history(stat_name,all_time)" +
       "&c:limit=1";
 
-    const r = await axios.get(url);
-    const char = r.data.character_list?.[0];
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error("Census API failed");
+    }
+
+    const data = await response.json();
+    const char = data.character_list?.[0];
 
     if (!char) {
       return res.status(404).json({ error: "Character not found" });
@@ -36,7 +44,7 @@ export default async function handler(req, res) {
     const playtimeSeconds = getHistory("play_time");
     const headshots = getStat("headshots");
 
-    res.json({
+    return res.json({
       name: char.name.first,
       battleRank: Number(char.battle_rank.value),
       factionId: char.faction_id,
@@ -48,7 +56,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error("API ERROR:", err?.response?.data || err);
-    res.status(500).json({ error: "Server error" });
+    console.error("CRASH:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 }
