@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
       "&c:resolve=stat_history(stat_name,all_time)" +
       "&c:tree=stat_name^start:stats.stat_history" +
-      "&c:limit=1";
+      "&c:limit=1" + "&c:resolve=times(minutes_played)";
 
     const response = await fetch(url);
     if (!response.ok) throw new Error("Census API failed");
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     const deaths = Number(history.deaths?.all_time || 0);
 
     // ✅ THIS IS WHAT FISU USES (MINUTES)
-    const minutesPlayed = Number(history.minutes_played?.all_time || 0);
+    const minutesPlayed = Number(times.minutes_played?.all_time || 0);
 
     const totalHours = Math.floor(minutesPlayed / 60);
     const days = Math.floor(totalHours / 24);
