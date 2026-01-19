@@ -15,6 +15,7 @@ export default async function handler(req, res) {
       "https://census.daybreakgames.com/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
       "&c:resolve=stat_history(stat_name,all_time)" +
+      "&c:tree=stat_name^start:stats.stat_history" +
       "&c:limit=1";
 
     const response = await fetch(url);
@@ -26,16 +27,14 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Character not found" });
     }
 
-    const history = char.stats?.stat_history || [];
+    // 🔑 TREE-INDEXED STAT HISTORY (THIS IS THE FIX)
+    const history = char.stats?.stat_history || {};
 
-    const getHistory = (n) =>
-      Number(history.find(s => s.stat_name === n)?.all_time || 0);
+    const kills = Number(history.kills?.all_time || 0);
+    const deaths = Number(history.deaths?.all_time || 0);
 
-    const kills = getHistory("kills");
-    const deaths = getHistory("deaths");
-
-    // ✅ LIFETIME PLAYTIME (MINUTES — RELIABLE)
-    const minutesPlayed = getHistory("minutes_played");
+    // ✅ THIS IS WHAT FISU USES (MINUTES)
+    const minutesPlayed = Number(history.minutes_played?.all_time || 0);
 
     const totalHours = Math.floor(minutesPlayed / 60);
     const days = Math.floor(totalHours / 24);
