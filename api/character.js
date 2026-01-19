@@ -18,33 +18,30 @@ export default async function handler(req, res) {
       "&c:limit=1";
 
     const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error("Census API failed");
-    }
+    if (!response.ok) throw new Error("Census API failed");
 
     const data = await response.json();
     const char = data.character_list?.[0];
+    if (!char) return res.status(404).json({ error: "Character not found" });
 
-    if (!char) {
-      return res.status(404).json({ error: "Character not found" });
-    }
-
-    const history = char.stats?.stat_history || [];
+    const statHistory = char.stats?.stat_history || [];
     const stats = char.stats?.stat || [];
 
+    // 🔹 From stat_history
     const getHistory = (n) =>
-      Number(history.find(s => s.stat_name === n)?.all_time || 0);
+      Number(statHistory.find(s => s.stat_name === n)?.all_time || 0);
 
+    // 🔹 From stat (LIFETIME TOTALS)
     const getStat = (n) =>
       Number(stats.find(s => s.stat_name === n)?.value_forever || 0);
 
     const kills = getHistory("kills");
     const deaths = getHistory("deaths");
-    const playtimeSeconds = getHistory("play_time");
-    const headshots = getStat("headshots");
 
-    return res.json({
+    const headshots = getStat("headshots");      // ✅ WORKS
+    const playtimeSeconds = getStat("play_time"); // ✅ WORKS
+
+    res.json({
       name: char.name.first,
       battleRank: Number(char.battle_rank.value),
       factionId: char.faction_id,
@@ -56,7 +53,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error("CRASH:", err);
-    return res.status(500).json({ error: "Server error" });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 }
