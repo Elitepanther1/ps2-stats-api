@@ -38,9 +38,8 @@ export default async function handler(req, res) {
     const kills = getHistory("kills");
     const deaths = getHistory("deaths");
 
-    // ✅ LIFETIME PLAYTIME (SECONDS — NOT minutes)
-    const playtimeSeconds = getStat("play_time");
-    
+    const playtimeSeconds = getHistory("play_time");
+
     const totalHours = Math.floor(playtimeSeconds / 3600);
     const days = Math.floor(totalHours / 24);
     const hours = totalHours % 24;
