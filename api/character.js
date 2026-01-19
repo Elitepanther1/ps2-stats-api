@@ -28,8 +28,9 @@ export default async function handler(req, res) {
 
     const addStats = (arr = []) => {
       for (const s of arr) {
-        if (!statMap[s.stat_name]) {
-          statMap[s.stat_name] = Number(s.all_time || s.value || 0);
+        const key = s.stat_name || s.name;
+        if (!statMap[key]) {
+          statMap[key] = Number(s.all_time || s.value || 0);
         }
       }
     };
