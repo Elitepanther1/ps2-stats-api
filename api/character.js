@@ -27,19 +27,21 @@ export default async function handler(req, res) {
     const statHistory = char.stats?.stat_history || [];
     const stats = char.stats?.stat || [];
 
-    // 🔹 From stat_history
+    // From stat_history
     const getHistory = (n) =>
       Number(statHistory.find(s => s.stat_name === n)?.all_time || 0);
 
-    // 🔹 From stat (LIFETIME TOTALS)
-    const getStat = (n) =>
-      Number(stats.find(s => s.stat_name === n)?.value_forever || 0);
+    // ✅ FIXED: support both value_forever AND value
+    const getStat = (n) => {
+      const stat = stats.find(s => s.stat_name === n);
+      return Number(stat?.value_forever ?? stat?.value ?? 0);
+    };
 
     const kills = getHistory("kills");
     const deaths = getHistory("deaths");
 
-    const headshots = getStat("headshots");      // ✅ WORKS
-    const playtimeSeconds = getStat("play_time"); // ✅ WORKS
+    const headshots = getStat("headshots");        // ✅ FIXED
+    const playtimeSeconds = getStat("play_time"); // unchanged
 
     res.json({
       name: char.name.first,
