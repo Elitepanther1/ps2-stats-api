@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const url =
       "https://census.daybreakgames.com/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
-      "&c:resolve=stat,stat_history(stat_name,all_time)" +
+      "&c:resolve=stat_history(stat_name,all_time)" +
       "&c:limit=1";
 
     const response = await fetch(url);
@@ -27,23 +27,19 @@ export default async function handler(req, res) {
     }
 
     const history = char.stats?.stat_history || [];
-    const stats = char.stats?.stat || [];
 
     const getHistory = (n) =>
       Number(history.find(s => s.stat_name === n)?.all_time || 0);
 
-    const getStat = (n) =>
-      Number(stats.find(s => s.stat_name === n)?.value_forever || 0);
-
     const kills = getHistory("kills");
     const deaths = getHistory("deaths");
 
-    const playtimeSeconds = getHistory("play_time");
+    // ✅ LIFETIME PLAYTIME (MINUTES — RELIABLE)
+    const minutesPlayed = getHistory("minutes_played");
 
-    const totalHours = Math.floor(playtimeSeconds / 3600);
+    const totalHours = Math.floor(minutesPlayed / 60);
     const days = Math.floor(totalHours / 24);
     const hours = totalHours % 24;
-
 
     res.json({
       name: char.name.first,
