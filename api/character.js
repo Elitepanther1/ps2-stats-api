@@ -14,8 +14,7 @@ export default async function handler(req, res) {
     const url =
       "https://census.daybreakgames.com/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
-      "&c:resolve=stat_history(stat_name,all_time)" +
-      "&c:tree=stat_name^start:stats.stat_history" +
+      "&c:resolve=stat,stat_history(stat_name,all_time)" +
       "&c:limit=1";
 
     const response = await fetch(url);
@@ -27,16 +26,22 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Character not found" });
     }
 
-    // ✅ NOW stat_history IS INDEXED
-    const history = char.stats?.stat_history || {};
+    const history = char.stats?.stat_history || [];
+    const stats = char.stats?.stat || [];
 
-    const kills = Number(history.kills?.all_time || 0);
-    const deaths = Number(history.deaths?.all_time || 0);
+    const getHistory = (n) =>
+      Number(history.find(s => s.stat_name === n)?.all_time || 0);
 
-    // ✅ THIS IS LIFETIME PLAYTIME (SECONDS)
-    const playtimeSeconds = Number(history.play_time?.all_time || 0);
+    const getStat = (n) =>
+      Number(stats.find(s => s.stat_name === n)?.value_forever || 0);
 
-    const totalHours = Math.floor(playtimeSeconds / 3600);
+    const kills = getHistory("kills");
+    const deaths = getHistory("deaths");
+
+    // ✅ LIFETIME PLAYTIME (MINUTES!)
+    const playtimeMinutes = getStat("play_time");
+
+    const totalHours = Math.floor(playtimeMinutes / 60);
     const days = Math.floor(totalHours / 24);
     const hours = totalHours % 24;
 
