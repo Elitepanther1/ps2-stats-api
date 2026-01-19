@@ -10,8 +10,9 @@ export default async function handler(req, res) {
     const url =
       "https://census.daybreakgames.com/s:example/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
-      "&c:resolve=stat,stat_history(stat_name,all_time)" +
-      "&c:limit=1";
+      "&c:join=title,characters_online_status,outfit_member_extended" +
+      "&c:resolve=stat,stat_history(stat_name,all_time),weapon_stat_by_faction" +
+      "&c:tree=stat_name^start:stats.stat_history";
 
     const response = await fetch(url);
     const data = await response.json();
@@ -22,25 +23,24 @@ export default async function handler(req, res) {
     }
 
     const history = char.stats?.stat_history || [];
-    const stats = char.stats?.stat || [];
+    const stat = char.stats?.stat || [];
 
-    // 🔹 stat_history → kills, deaths, playtime
     const getHistory = (name) =>
       Number(history.find(s => s.stat_name === name)?.all_time || 0);
 
-    // 🔹 stat → headshots (USES value_forever!)
     const getStat = (name) =>
-      Number(stats.find(s => s.stat_name === name)?.value_forever || 0);
+      Number(stat.find(s => s.stat_name === name)?.value_forever || 0);
 
     const kills = getHistory("kills");
     const deaths = getHistory("deaths");
-    const playtimeSeconds = getHistory("play_time"); // ✅ FIXED
-    const headshots = getStat("headshots"); // ✅ FIXED
+    const playtimeSeconds = getHistory("play_time");
+    const headshots = getStat("headshots");
 
     res.json({
       name: char.name.first,
       battleRank: Number(char.battle_rank.value),
       factionId: char.faction_id,
+      online: char.characters_online_status?.online_status === "1",
       kills,
       deaths,
       kd: deaths > 0 ? (kills / deaths).toFixed(2) : "∞",
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("Census API error:", err);
     res.status(500).json({ error: "Server error" });
   }
 }
