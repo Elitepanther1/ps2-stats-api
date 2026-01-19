@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const url =
       "https://census.daybreakgames.com/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
-      "&c:resolve=stat_history(stat_name,all_time)" +
+      "&c:resolve=stat,stat_history(stat_name,all_time)" +
       "&c:limit=1";
 
     const response = await fetch(url);
@@ -22,19 +22,24 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     const char = data.character_list?.[0];
-    if (!char) {
-      return res.status(404).json({ error: "Character not found" });
-    }
+    if (!char) return res.status(404).json({ error: "Character not found" });
 
-    // ===== WORKING & STABLE =====
     const statHistory = char.stats?.stat_history || [];
+    const stats = char.stats?.stat || [];
 
+    // 🔹 From stat_history
     const getHistory = (n) =>
       Number(statHistory.find(s => s.stat_name === n)?.all_time || 0);
 
+    // 🔹 From stat (LIFETIME TOTALS)
+    const getStat = (n) =>
+      Number(stats.find(s => s.stat_name === n)?.value_forever || 0);
+
     const kills = getHistory("kills");
     const deaths = getHistory("deaths");
-    const playtimeSeconds = getHistory("play_time"); // ✅ RESTORED
+
+    const headshots = getStat("headshots");      // ✅ WORKS
+    const playtimeSeconds = getStat("play_time"); // ✅ WORKS
 
     res.json({
       name: char.name.first,
@@ -43,12 +48,12 @@ export default async function handler(req, res) {
       kills,
       deaths,
       kd: deaths > 0 ? (kills / deaths).toFixed(2) : "∞",
-      headshots: null, // ⚠️ Census limitation (see explanation)
+      headshots,
       playtimeHours: (playtimeSeconds / 3600).toFixed(1)
     });
 
   } catch (err) {
-    console.error("SERVER ERROR:", err);
+    console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 }
