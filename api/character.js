@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const url =
       "https://census.daybreakgames.com/get/ps2:v2/character/" +
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
-      "&c:resolve=stat,stat_history(stat_name,all_time)" +
+      "&c:resolve=stat,stat_history(stat_name,all_time),weapon_stat_by_faction" +
       "&c:limit=1";
 
     const response = await fetch(url);
@@ -22,27 +22,33 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     const char = data.character_list?.[0];
-    if (!char) return res.status(404).json({ error: "Character not found" });
+    if (!char) {
+      return res.status(404).json({ error: "Character not found" });
+    }
 
+    // ===== EXISTING WORKING STATS =====
     const statHistory = char.stats?.stat_history || [];
-    const stats = char.stats?.stat || [];
 
-    // From stat_history
     const getHistory = (n) =>
       Number(statHistory.find(s => s.stat_name === n)?.all_time || 0);
 
-    // ✅ FIXED: support both value_forever AND value
-    const getStat = (n) => {
-      const stat = stats.find(s => s.stat_name === n);
-      return Number(stat?.value_forever ?? stat?.value ?? 0);
-    };
-
     const kills = getHistory("kills");
     const deaths = getHistory("deaths");
+    const playtimeSeconds = getHistory("play_time");
 
-    const headshots = getStat("headshots");        // ✅ FIXED
-    const playtimeSeconds = getStat("play_time"); // unchanged
+    // ===== FIXED HEADSHOTS =====
+    const weaponStats = char.weapon_stat_by_faction || [];
+    let headshots = 0;
 
+    for (const weapon of weaponStats) {
+      for (const stat of weapon.stats || []) {
+        if (stat.stat_name === "headshots") {
+          headshots += Number(stat.value || 0);
+        }
+      }
+    }
+
+    // ===== RESPONSE =====
     res.json({
       name: char.name.first,
       battleRank: Number(char.battle_rank.value),
@@ -55,7 +61,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("SERVER ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 }
