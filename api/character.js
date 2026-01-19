@@ -16,8 +16,10 @@ export default async function handler(req, res) {
       "?name.first_lower=" + encodeURIComponent(name.toLowerCase()) +
       "&c:resolve=stat_history(stat_name,all_time)" +
       "&c:tree=stat_name^start:stats.stat_history" +
-      "&c:limit=1" +
-      "&c:resolve=times(minutes_played)";
+      "&c:resolve=times(minutes_played)" +
+      "&c:resolve=weapon_stat_by_faction" +
+      "&c:tree=stat_name^start:stats.stat_history^field:faction_id^list:1" +
+      "&c:limit=1";
 
     const response = await fetch(url);
     if (!response.ok) throw new Error("Census API failed");
@@ -28,15 +30,23 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Character not found" });
     }
 
+    // Stat history
     const history = char.stats?.stat_history || {};
     const kills = Number(history.kills?.all_time || 0);
     const deaths = Number(history.deaths?.all_time || 0);
 
-    // ✅ Fix: directly use char.times.minutes_played
+    // Playtime
     const minutesPlayed = Number(char.times?.minutes_played || 0);
     const totalHours = Math.floor(minutesPlayed / 60);
     const days = Math.floor(totalHours / 24);
     const hours = totalHours % 24;
+
+    // Headshots
+    const factionId = char.faction_id;
+    const headshotsEntry = char.weapon_stat_by_faction?.find(
+      (w) => w.stat_name === "headshots" && w.faction_id === factionId
+    );
+    const headshots = Number(headshotsEntry?.stat_history?.all_time || 0);
 
     res.json({
       name: char.name.first,
@@ -45,6 +55,7 @@ export default async function handler(req, res) {
       kills,
       deaths,
       kd: deaths === 0 ? "∞" : (kills / deaths).toFixed(2),
+      headshots,
       playtime: `${days}d ${hours}h`
     });
 
