@@ -41,10 +41,13 @@ export default async function handler(req, res) {
     const days = Math.floor(totalHours / 24);
     const hours = totalHours % 24;
 
-    // Headshots: sum all "weapon_headshots"
+    // Headshots per faction
+    const factionValues = { 1: "value_vs", 2: "value_nc", 3: "value_tr" };
+    const factionField = factionValues[char.faction_id] || "value_vs";
+
     const headshots = char.weapon_stat_by_faction
       ?.filter(w => w.stat_name === "weapon_headshots")
-      .reduce((sum, w) => sum + Number(w.stat_history?.all_time || 0), 0) || 0;
+      .reduce((sum, w) => sum + Number(w[factionField] || 0), 0) || 0;
 
     res.json({
       name: char.name.first,
