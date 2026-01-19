@@ -7,27 +7,38 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing character name" });
   }
 
-  const SERVICE_ID = process.env.SERVICE_ID;
+  const SERVICE_ID = process.env.SERVICE_ID; // ex: s:Elite112608
   const BASE = "https://census.daybreakgames.com";
 
   try {
-    const url = `${BASE}/${SERVICE_ID}/get/ps2:v2/character/?name.first_lower=${name.toLowerCase()}&c:resolve=stats&c:limit=1`;
+    const url =
+      `${BASE}/${SERVICE_ID}/get/ps2:v2/character/` +
+      `?name.first_lower=${encodeURIComponent(name.toLowerCase())}` +
+      `&c:resolve=stat` +
+      `&c:limit=1`;
 
     const r = await axios.get(url);
-    const c = r.data.character_list[0];
+    const c = r.data.character_list?.[0];
 
     if (!c) {
-      return res.json({ error: "Character not found" });
+      return res.status(404).json({ error: "Character not found" });
     }
+
+    const stats = c.stats?.stat ?? [];
+
+    const getStat = (name) =>
+      Number(stats.find(s => s.stat_name === name)?.value ?? 0);
 
     res.json({
       name: c.name.first,
-      br: c.battle_rank.value,
+      br: Number(c.battle_rank.value),
       faction: c.faction_id,
-      kills: c.stats.stat.find(s => s.stat_name === "kills")?.value || 0,
-      deaths: c.stats.stat.find(s => s.stat_name === "deaths")?.value || 0
+      kills: getStat("kills"),
+      deaths: getStat("deaths")
     });
-  } catch {
+
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "API error" });
   }
 }
