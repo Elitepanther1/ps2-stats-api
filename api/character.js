@@ -24,16 +24,18 @@ export default async function handler(req, res) {
     const history = char.stats?.stat_history || [];
     const stats = char.stats?.stat || [];
 
+    // 🔹 stat_history → kills, deaths, playtime
     const getHistory = (name) =>
       Number(history.find(s => s.stat_name === name)?.all_time || 0);
 
+    // 🔹 stat → headshots (USES value_forever!)
     const getStat = (name) =>
-      Number(stats.find(s => s.stat_name === name)?.value || 0);
+      Number(stats.find(s => s.stat_name === name)?.value_forever || 0);
 
     const kills = getHistory("kills");
     const deaths = getHistory("deaths");
-    const playtimeSeconds = getHistory("play_time_seconds");
-    const headshots = getStat("headshots");
+    const playtimeSeconds = getHistory("play_time"); // ✅ FIXED
+    const headshots = getStat("headshots"); // ✅ FIXED
 
     res.json({
       name: char.name.first,
